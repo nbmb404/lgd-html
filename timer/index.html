@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#fff0f4">
+  <title>모먼트 — 지금, 나에게 집중할 시간</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="members">
+  <ul>
+    
+    <ol class="score">
+        <li>50</li>
+        <li>70</li>
+    </ol>
+
+    <li>최고민수</li>
+    <li>최강숙진</li>
+    <li>죽림수지</li>
+  </ul>
+  </div>
+  <div class="stars" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span><span>✦</span><span>✧</span><span>✦</span><span>✦</span><span>✧</span></div>
+  <header class="header wrap">
+    <a class="logo" href="#" aria-label="모먼트 홈"><span class="logo-mark">✦</span> moment<span class="logo-dot">.</span></a>
+    <nav aria-label="주요 메뉴"><a href="#how-it-works">사용 방법</a><a class="nav-button" href="#timer">집중 시작하기 <span>↗</span></a></nav>
+  </header>
+  <main>
+    <section class="hero wrap">
+      <div class="hero-copy">
+        <div class="eyebrow"><span></span> A LITTLE TIME, JUST FOR YOU</div>
+        <h1>잠깐, 세상은 끄고<br><span>나에게 집중해요.</span></h1>
+        <p class="intro">해야 할 일이 많을수록, 하나씩 천천히.<br>작은 집중이 만드는 기분 좋은 변화를 만나보세요.</p>
+        <a href="#timer" class="primary-link">나만의 집중 시간 만들기 <span>→</span></a>
+        <p class="small-note"><span>✓</span> 가입 없이 가볍게 <span>✓</span> 오직 지금 이 순간에</p>
+        <div class="hero-caption"><span class="caption-line"></span> 조금 느려도 괜찮아요. 나만의 속도로.</div>
+      </div>
+      <div class="timer-scene">
+        <div class="floating-label label-top"><span>✦</span> 오늘도 한 걸음, 잘하고 있어요</div>
+        <section class="timer-card" id="timer" aria-labelledby="timer-heading">
+          <div class="card-top"><span class="card-kicker">MY FOCUS MOMENT</span><span class="status-dot" id="status">집중 준비</span></div>
+          <h2 id="timer-heading">지금은, 집중할 시간</h2>
+          <div class="mode-tabs" role="group" aria-label="타이머 모드"><button class="active" data-minutes="25" aria-pressed="true">집중하기</button><button data-minutes="5" aria-pressed="false">짧은 휴식</button><button data-minutes="15" aria-pressed="false">긴 휴식</button></div>
+          <div class="clock-face"><svg viewBox="0 0 240 240" aria-hidden="true"><circle class="ring-track" cx="120" cy="120" r="109"/><circle id="progress" class="ring-progress" cx="120" cy="120" r="109"/></svg><div class="clock-content"><span class="clock-icon" aria-hidden="true">✦</span><time id="time" role="timer" aria-label="남은 시간">25:00</time><span id="timer-hint">작은 집중, 커다란 변화</span></div></div>
+          <div class="timer-actions"><button id="start" class="start-button">시작하기 <span aria-hidden="true">▶</span></button><button id="reset" class="reset-button" aria-label="타이머 초기화" title="타이머 초기화">↻</button></div>
+          <p class="card-footnote">이 시간만큼은, 다른 생각은 잠시 내려놓아요.</p>
+          <p class="sr-only" id="announcement" role="status" aria-live="polite"></p>
+        </section>
+        <div class="floating-label label-bottom"><span class="mini-flower">✿</span><div>나를 위한 작은 몰입<strong>차곡차곡 쌓이는 좋은 습관</strong></div></div>
+      </div>
+    </section>
+    <section class="benefits wrap" id="how-it-works" aria-label="모먼트 사용 방법">
+      <div class="benefit"><div class="feature-icon pink">◷</div><div><h3>부담 없이, 25분부터</h3><p>시작이 어렵다면 짧은 집중부터 해봐요.</p></div></div>
+      <div class="benefit"><div class="feature-icon purple">♧</div><div><h3>쉬어가는 것도 중요하니까</h3><p>집중 사이 작은 휴식으로 다시 충전해요.</p></div></div>
+      <div class="benefit"><div class="feature-icon peach">✧</div><div><h3>복잡한 건 덜어냈어요</h3><p>시간을 고르고, 시작 버튼만 눌러주세요.</p></div></div>
+    </section>
+  </main>
+  <footer class="wrap"><span>moment. <span class="footer-sub">작은 집중이 쌓이는 곳</span></span><span>Made for your peaceful moments <span class="heart">♡</span></span></footer>
+</body>
+</html>
