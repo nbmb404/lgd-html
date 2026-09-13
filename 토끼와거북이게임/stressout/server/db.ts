@@ -143,14 +143,18 @@ export function saveSessionProgress(
       destroyed_count = excluded.destroyed_count
   `);
 
-  const save = db.transaction(() => {
+  try {
+    db.exec("BEGIN");
     updateSession.run(activeSeconds, sessionId, visitorId);
     for (const object of objects) {
       upsertObject.run(sessionId, object.objectType, object.hitCount, object.destroyedCount);
     }
-  });
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
 
-  save();
   return true;
 }
 

@@ -136,11 +136,14 @@ app.listen(port, () => {
 });
 
 function getOrCreateVisitorId(cookieHeader: string | undefined) {
-  const cookies = new Map(
+  const cookies = new Map<string, string>(
     (cookieHeader ?? "")
       .split(";")
-      .map((cookie) => cookie.trim().split("="))
-      .filter(([key, value]) => key && value)
+      .map((cookie): [string, string] | null => {
+        const [key, value] = cookie.trim().split("=");
+        return key && value ? [key, value] : null;
+      })
+      .filter((cookie): cookie is [string, string] => cookie !== null)
   );
 
   return cookies.get(cookieName) ?? crypto.randomUUID();
