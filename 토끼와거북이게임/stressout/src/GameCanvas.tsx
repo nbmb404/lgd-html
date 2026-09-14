@@ -39,6 +39,14 @@ interface Toast {
   age: number;
 }
 
+interface BreakEffect {
+  x: number;
+  y: number;
+  age: number;
+  seed: number;
+  type: ObjectType;
+}
+
 const audioContextRef: { current: AudioContext | null } = { current: null };
 
 export default function GameCanvas({
@@ -52,6 +60,7 @@ export default function GameCanvas({
 }: GameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const marksRef = useRef<Mark[]>([]);
+  const breaksRef = useRef<BreakEffect[]>([]);
   const particlesRef = useRef<Particle[]>([]);
   const toastsRef = useRef<Toast[]>([]);
   const damageRef = useRef(0);
@@ -61,6 +70,7 @@ export default function GameCanvas({
 
   useEffect(() => {
     marksRef.current = [];
+    breaksRef.current = [];
     particlesRef.current = [];
     toastsRef.current = [];
     damageRef.current = 0;
@@ -103,7 +113,8 @@ export default function GameCanvas({
       }
 
       drawObject(context, objectType, width, height, damageRef.current);
-      drawMarks(context, marksRef.current, objectType);
+      drawImpactMarks(context, marksRef.current, objectType, width, height);
+      updateBreakEffects(context, breaksRef.current, width, height);
 
       if (screenShake && shakeRef.current > 0.05) {
         context.restore();
@@ -157,9 +168,20 @@ export default function GameCanvas({
     onHit(objectType);
 
     if (damageRef.current >= object.maxDamage) {
+      breaksRef.current.push({ x, y, age: 0, seed: Math.random() * 1000, type: objectType });
       toastsRef.current.push({ x, y, age: 0 });
       shakeRef.current = 4.4;
-      spawnParticles(particlesRef.current, objectType, x, y, particleCounts[particleLevel] * 3, true);
+      spawnParticles(
+        particlesRef.current,
+        objectType,
+        x,
+        y,
+        particleCounts[particleLevel] * (objectType === "window" ? 5 : 3),
+        true
+      );
+      if (objectType === "window") {
+        spawnWindowCollapse(particlesRef.current, canvas.clientWidth, canvas.clientHeight, particleCounts[particleLevel] * 2);
+      }
       playSound(object.sound, muted, Math.min(100, volume + 15));
       onDestroyed(objectType);
       damageRef.current = Math.max(1, damageRef.current % object.maxDamage);
@@ -301,26 +323,178 @@ function drawObject(
   context.restore();
 }
 
-function drawMarks(context: CanvasRenderingContext2D, marks: Mark[], type: ObjectType) {
+function drawImpactMarks(
+  context: CanvasRenderingContext2D,
+  marks: Mark[],
+  type: ObjectType,
+  width: number,
+  height: number
+) {
+  if (type === "window") {
+    clipWindow(context, width, height);
+  }
+
   for (const mark of marks) {
     mark.age += 1;
     context.save();
     context.translate(mark.x, mark.y);
     context.rotate(mark.seed);
-    context.strokeStyle = type === "tree" ? "rgba(239, 94, 45, 0.78)" : "rgba(22, 35, 45, 0.72)";
-    context.lineWidth = type === "paper" ? 2 : 3;
 
-    for (let i = 0; i < 7; i += 1) {
-      const angle = (Math.PI * 2 * i) / 7;
-      const length = 18 + (i % 3) * 12 + Math.min(34, mark.age * 0.4);
-      context.beginPath();
-      context.moveTo(0, 0);
-      context.lineTo(Math.cos(angle) * length, Math.sin(angle) * length);
-      context.stroke();
+    if (type === "window") {
+      drawGlassCrack(context, mark);
+    } else if (type === "paper") {
+      drawPaperTear(context, mark);
+    } else if (type === "wood") {
+      drawWoodSplit(context, mark);
+    } else if (type === "can") {
+      drawMetalDent(context, mark);
+    } else if (type === "tree") {
+      drawBurnMark(context, mark);
+    } else {
+      drawKeycapPop(context, mark);
     }
 
     context.restore();
   }
+
+  if (type === "window") {
+    context.restore();
+  }
+}
+
+function drawGlassCrack(context: CanvasRenderingContext2D, mark: Mark) {
+  context.strokeStyle = "rgba(231, 250, 255, 0.95)";
+  context.lineWidth = 2;
+
+  for (let i = 0; i < 9; i += 1) {
+    const angle = (Math.PI * 2 * i) / 9 + Math.sin(mark.seed + i) * 0.18;
+    const length = 18 + Math.abs(Math.sin(mark.seed * (i + 1))) * 42;
+    context.beginPath();
+    context.moveTo(0, 0);
+    context.lineTo(Math.cos(angle) * length, Math.sin(angle) * length);
+    context.stroke();
+  }
+
+  context.strokeStyle = "rgba(77, 124, 148, 0.55)";
+  context.lineWidth = 1;
+  for (let i = 0; i < 5; i += 1) {
+    const radius = 10 + i * 8;
+    context.beginPath();
+    context.arc(0, 0, radius, Math.PI * 0.12 * i, Math.PI * (0.7 + i * 0.18));
+    context.stroke();
+  }
+}
+
+function drawPaperTear(context: CanvasRenderingContext2D, mark: Mark) {
+  context.strokeStyle = "rgba(127, 118, 101, 0.55)";
+  context.lineWidth = 3;
+  context.beginPath();
+  context.moveTo(-18, -8);
+  context.lineTo(-7, 4);
+  context.lineTo(6, -2);
+  context.lineTo(18, 9);
+  context.stroke();
+}
+
+function drawWoodSplit(context: CanvasRenderingContext2D, mark: Mark) {
+  context.strokeStyle = "rgba(58, 31, 18, 0.72)";
+  context.lineWidth = 4;
+  context.beginPath();
+  context.moveTo(-28, -7);
+  context.lineTo(-8, 1);
+  context.lineTo(8, -3);
+  context.lineTo(30, 8);
+  context.stroke();
+}
+
+function drawMetalDent(context: CanvasRenderingContext2D, mark: Mark) {
+  context.strokeStyle = "rgba(105, 45, 54, 0.65)";
+  context.lineWidth = 3;
+  context.beginPath();
+  context.ellipse(0, 0, 24, 11, 0.35, 0, Math.PI * 2);
+  context.stroke();
+}
+
+function drawBurnMark(context: CanvasRenderingContext2D, mark: Mark) {
+  const gradient = context.createRadialGradient(0, 0, 2, 0, 0, 34);
+  gradient.addColorStop(0, "rgba(255, 122, 48, 0.5)");
+  gradient.addColorStop(0.45, "rgba(60, 39, 28, 0.48)");
+  gradient.addColorStop(1, "rgba(60, 39, 28, 0)");
+  context.fillStyle = gradient;
+  context.beginPath();
+  context.arc(0, 0, 34, 0, Math.PI * 2);
+  context.fill();
+}
+
+function drawKeycapPop(context: CanvasRenderingContext2D, mark: Mark) {
+  context.strokeStyle = "rgba(255, 184, 207, 0.62)";
+  context.lineWidth = 2;
+  context.beginPath();
+  context.arc(0, 0, 20, 0, Math.PI * 2);
+  context.stroke();
+}
+
+function updateBreakEffects(
+  context: CanvasRenderingContext2D,
+  effects: BreakEffect[],
+  width: number,
+  height: number
+) {
+  for (let index = effects.length - 1; index >= 0; index -= 1) {
+    const effect = effects[index];
+    effect.age += 1;
+
+    if (effect.type === "window") {
+      drawWindowBreak(context, effect, width, height);
+    }
+
+    if (effect.age > 46) {
+      effects.splice(index, 1);
+    }
+  }
+}
+
+function drawWindowBreak(context: CanvasRenderingContext2D, effect: BreakEffect, width: number, height: number) {
+  const opacity = Math.max(0, 1 - effect.age / 46);
+
+  clipWindow(context, width, height);
+  context.globalCompositeOperation = "destination-out";
+  context.globalAlpha = 0.82 * opacity;
+  drawJaggedHole(context, effect.x, effect.y, 52 + effect.age * 0.7, effect.seed);
+  context.restore();
+
+  context.save();
+  context.globalAlpha = opacity;
+  context.strokeStyle = "rgba(255, 255, 255, 0.95)";
+  context.lineWidth = 3;
+  drawJaggedHole(context, effect.x, effect.y, 56 + effect.age * 0.7, effect.seed);
+  context.stroke();
+  context.restore();
+}
+
+function drawJaggedHole(context: CanvasRenderingContext2D, x: number, y: number, radius: number, seed: number) {
+  context.beginPath();
+  for (let i = 0; i < 14; i += 1) {
+    const angle = (Math.PI * 2 * i) / 14;
+    const jag = 0.64 + Math.abs(Math.sin(seed + i * 2.31)) * 0.52;
+    const px = x + Math.cos(angle) * radius * jag;
+    const py = y + Math.sin(angle) * radius * jag;
+    if (i === 0) {
+      context.moveTo(px, py);
+    } else {
+      context.lineTo(px, py);
+    }
+  }
+  context.closePath();
+  context.fill();
+}
+
+function clipWindow(context: CanvasRenderingContext2D, width: number, height: number) {
+  const centerX = width / 2;
+  const centerY = height / 2 + 8;
+  context.save();
+  roundRect(context, centerX - 150, centerY - 115, 300, 220, 6);
+  context.clip();
 }
 
 function updateParticles(context: CanvasRenderingContext2D, particles: Particle[], height: number) {
@@ -468,6 +642,31 @@ function spawnParticles(particles: Particle[], type: ObjectType, x: number, y: n
 
   if (particles.length > 360) {
     particles.splice(0, particles.length - 360);
+  }
+}
+
+function spawnWindowCollapse(particles: Particle[], width: number, height: number, count: number) {
+  const centerX = width / 2;
+  const centerY = height / 2 + 8;
+
+  for (let i = 0; i < count; i += 1) {
+    const paneX = centerX - 130 + Math.random() * 260;
+    const paneY = centerY - 95 + Math.random() * 190;
+    const maxLife = 70 + Math.random() * 42;
+
+    particles.push({
+      x: paneX,
+      y: paneY,
+      vx: (Math.random() - 0.5) * 11,
+      vy: Math.random() * 4 - 1,
+      size: 7 + Math.random() * 16,
+      life: maxLife,
+      maxLife,
+      color: ["#eaffff", "#bcebff", "#ffffff", "#8ed7ff"][Math.floor(Math.random() * 4)],
+      kind: "glass",
+      rotation: Math.random() * Math.PI,
+      spin: (Math.random() - 0.5) * 0.38
+    });
   }
 }
 
