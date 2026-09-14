@@ -51,7 +51,6 @@ export default function GameCanvas({
   const particlesRef = useRef<Particle[]>([]);
   const toastsRef = useRef<Toast[]>([]);
   const damageRef = useRef(0);
-  const destroyedRef = useRef(false);
   const lastDragHitRef = useRef(0);
   const object = useMemo(() => getObject(objectType), [objectType]);
 
@@ -60,7 +59,6 @@ export default function GameCanvas({
     particlesRef.current = [];
     toastsRef.current = [];
     damageRef.current = 0;
-    destroyedRef.current = false;
   }, [objectType]);
 
   useEffect(() => {
@@ -92,16 +90,16 @@ export default function GameCanvas({
       context.clearRect(0, 0, width, height);
       drawBackdrop(context, width, height);
 
-      if (screenShake && damageRef.current > 0 && !destroyedRef.current) {
+      if (screenShake && damageRef.current > 0) {
         const shake = Math.min(6, damageRef.current) * 0.45;
         context.save();
         context.translate(Math.sin(frame * 0.7) * shake, Math.cos(frame * 0.9) * shake);
       }
 
-      drawObject(context, objectType, width, height, damageRef.current, destroyedRef.current);
+      drawObject(context, objectType, width, height, damageRef.current);
       drawMarks(context, marksRef.current, objectType);
 
-      if (screenShake && damageRef.current > 0 && !destroyedRef.current) {
+      if (screenShake && damageRef.current > 0) {
         context.restore();
       }
 
@@ -123,7 +121,7 @@ export default function GameCanvas({
 
   const strike = (event: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
-    if (!canvas || destroyedRef.current) {
+    if (!canvas) {
       return;
     }
 
@@ -143,16 +141,19 @@ export default function GameCanvas({
 
     damageRef.current += 1;
     marksRef.current.push({ x, y, age: 0, seed: Math.random() * 1000 });
+    if (marksRef.current.length > 38) {
+      marksRef.current.splice(0, marksRef.current.length - 38);
+    }
     spawnParticles(particlesRef.current, objectType, x, y, particleCounts[particleLevel]);
     playSound(object.sound, muted, volume);
     onHit(objectType);
 
     if (damageRef.current >= object.maxDamage) {
-      destroyedRef.current = true;
       toastsRef.current.push({ x, y, age: 0 });
       spawnParticles(particlesRef.current, objectType, x, y, particleCounts[particleLevel] * 2);
       playSound(object.sound, muted, Math.min(100, volume + 15));
       onDestroyed(objectType);
+      damageRef.current = Math.max(1, damageRef.current % object.maxDamage);
     }
   };
 
@@ -175,13 +176,13 @@ export default function GameCanvas({
 
 function drawBackdrop(context: CanvasRenderingContext2D, width: number, height: number) {
   const gradient = context.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, "#f7efe5");
-  gradient.addColorStop(0.45, "#f0f4ef");
-  gradient.addColorStop(1, "#e7edf4");
+  gradient.addColorStop(0, "#fff0f6");
+  gradient.addColorStop(0.45, "#fff7fb");
+  gradient.addColorStop(1, "#f4f7ff");
   context.fillStyle = gradient;
   context.fillRect(0, 0, width, height);
 
-  context.fillStyle = "rgba(43, 49, 57, 0.08)";
+  context.fillStyle = "rgba(255, 109, 153, 0.1)";
   context.fillRect(0, height - 32, width, 32);
 }
 
@@ -190,8 +191,7 @@ function drawObject(
   type: ObjectType,
   width: number,
   height: number,
-  damage: number,
-  destroyed: boolean
+  damage: number
 ) {
   const centerX = width / 2;
   const centerY = height / 2 + 8;
@@ -201,8 +201,8 @@ function drawObject(
   context.lineJoin = "round";
 
   if (type === "window") {
-    context.strokeStyle = destroyed ? "rgba(70, 114, 145, 0.22)" : "#557b8d";
-    context.fillStyle = destroyed ? "rgba(178, 225, 255, 0.15)" : "rgba(178, 225, 255, 0.72)";
+    context.strokeStyle = "#557b8d";
+    context.fillStyle = "rgba(178, 225, 255, 0.72)";
     roundRect(context, centerX - 150, centerY - 115, 300, 220, 6);
     context.fill();
     context.stroke();
@@ -215,12 +215,12 @@ function drawObject(
   }
 
   if (type === "keyboard") {
-    context.fillStyle = destroyed ? "#343a40" : "#1f242b";
+    context.fillStyle = "#1f242b";
     roundRect(context, centerX - 180, centerY - 70 + damage * 2, 360, 140 - damage * 5, 8);
     context.fill();
     for (let row = 0; row < 4; row += 1) {
       for (let col = 0; col < 10; col += 1) {
-        const missing = destroyed || Math.sin(row * 9 + col * 13 + damage) > 0.78 - damage * 0.05;
+        const missing = Math.sin(row * 9 + col * 13 + damage) > 0.78 - damage * 0.05;
         if (!missing) {
           context.fillStyle = "#e8ecef";
           roundRect(context, centerX - 154 + col * 31, centerY - 48 + row * 28, 22, 18, 4);
@@ -231,7 +231,7 @@ function drawObject(
   }
 
   if (type === "wood") {
-    context.fillStyle = destroyed ? "#7a4929" : "#9b6437";
+    context.fillStyle = "#9b6437";
     roundRect(context, centerX - 170, centerY - 55, 340, 110, 4);
     context.fill();
     context.strokeStyle = "#5a331e";
@@ -244,7 +244,7 @@ function drawObject(
   }
 
   if (type === "paper") {
-    context.fillStyle = destroyed ? "rgba(250, 247, 239, 0.45)" : "#faf7ef";
+    context.fillStyle = "#faf7ef";
     context.strokeStyle = "#c9c0ad";
     context.beginPath();
     context.moveTo(centerX - 115, centerY - 135);
@@ -283,12 +283,6 @@ function drawObject(
     context.arc(centerX, centerY - 90, 118 - damage * 4, 0, Math.PI * 2);
     context.fill();
     drawFlames(context, centerX + 65, centerY - 25, damage);
-  }
-
-  if (destroyed) {
-    context.globalAlpha = 0.22;
-    context.fillStyle = "#1f2933";
-    context.fillRect(centerX - 170, centerY + 125, 340, 12);
   }
 
   context.restore();
@@ -340,7 +334,7 @@ function updateToasts(context: CanvasRenderingContext2D, toasts: Toast[]) {
     const toast = toasts[index];
     toast.age += 1;
     context.globalAlpha = Math.max(0, 1 - toast.age / 90);
-    context.fillStyle = "#f04d2f";
+    context.fillStyle = "#f16d99";
     context.font = "700 28px Pretendard, system-ui, sans-serif";
     context.textAlign = "center";
     context.fillText("엔돌핀 +10", toast.x, toast.y - toast.age * 0.75);

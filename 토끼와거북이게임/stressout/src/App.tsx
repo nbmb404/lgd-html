@@ -42,7 +42,7 @@ export default function App() {
   const [progress, setProgress] = useState<Record<ObjectType, ObjectProgress>>(createProgress());
   const [records, setRecords] = useState<PlaySession[]>([]);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [statusMessage, setStatusMessage] = useState("클릭해서 부숴보세요");
+  const [statusMessage, setStatusMessage] = useState("계속 눌러도 멈추지 않아요");
   const savingRef = useRef(false);
 
   useEffect(() => {
@@ -100,7 +100,7 @@ export default function App() {
       setSessionStartedAt(Date.now());
       setCanvasKey((key) => key + 1);
       setScreen("game");
-      setStatusMessage("클릭하거나 드래그해서 마음껏 부숴보세요");
+      setStatusMessage("클릭하거나 드래그하면 계속 부서져요");
     } catch {
       setStatusMessage("세션 시작에 실패했습니다");
     }
@@ -157,7 +157,7 @@ export default function App() {
 
   const refill = () => {
     setCanvasKey((key) => key + 1);
-    setStatusMessage("새 물건을 채웠어요");
+    setStatusMessage("파편을 정리했어요");
   };
 
   const openRecords = async () => {
@@ -248,7 +248,7 @@ export default function App() {
                 </button>
               ))}
             </div>
-            <button className="refill-button" onClick={refill}>다시 채우기</button>
+            <button className="refill-button" onClick={refill}>파편 정리</button>
           </footer>
 
           {settingsOpen && (
