@@ -2,7 +2,24 @@ import { existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
-export type ObjectType = "window" | "keyboard" | "wood" | "paper" | "can" | "tree";
+export type ObjectType =
+  | "window"
+  | "cup"
+  | "plank"
+  | "paper"
+  | "laptop"
+  | "plate"
+  | "keyboard"
+  | "monitor"
+  | "can"
+  | "bubble"
+  | "balloon"
+  | "ice"
+  | "wall"
+  | "box"
+  | "pencils"
+  | "cookie"
+  | "jelly";
 export type ParticleLevel = "low" | "normal" | "high";
 
 export interface PreferenceRecord {
@@ -62,7 +79,25 @@ db.exec(`
   );
 `);
 
-const allowedObjects = new Set<ObjectType>(["window", "keyboard", "wood", "paper", "can", "tree"]);
+const allowedObjects = new Set<ObjectType>([
+  "window",
+  "cup",
+  "plank",
+  "paper",
+  "laptop",
+  "plate",
+  "keyboard",
+  "monitor",
+  "can",
+  "bubble",
+  "balloon",
+  "ice",
+  "wall",
+  "box",
+  "pencils",
+  "cookie",
+  "jelly"
+]);
 const allowedParticleLevels = new Set<ParticleLevel>(["low", "normal", "high"]);
 
 export function isObjectType(value: unknown): value is ObjectType {

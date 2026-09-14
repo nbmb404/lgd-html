@@ -1,4 +1,21 @@
-export type ObjectType = "window" | "keyboard" | "wood" | "paper" | "can" | "tree";
+export type ObjectType =
+  | "window"
+  | "cup"
+  | "plank"
+  | "paper"
+  | "laptop"
+  | "plate"
+  | "keyboard"
+  | "monitor"
+  | "can"
+  | "bubble"
+  | "balloon"
+  | "ice"
+  | "wall"
+  | "box"
+  | "pencils"
+  | "cookie"
+  | "jelly";
 export type ParticleLevel = "low" | "normal" | "high";
 
 export interface Preferences {

@@ -412,14 +412,7 @@ function formatSummary(summary: string | null) {
     return "사용한 물건 기록 없음";
   }
 
-  const names: Record<string, string> = {
-    window: "유리창",
-    keyboard: "키보드",
-    wood: "나무판자",
-    paper: "종이",
-    can: "캔",
-    tree: "나무"
-  };
+  const names = Object.fromEntries(objects.map((object) => [object.type, object.label]));
 
   return summary
     .split(",")
