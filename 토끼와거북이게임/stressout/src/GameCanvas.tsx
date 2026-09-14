@@ -27,9 +27,9 @@ interface GameState {
 }
 
 const particleMultipliers: Record<ParticleLevel, number> = {
-  low: 1,
-  normal: 1.75,
-  high: 2.7
+  low: 0.75,
+  normal: 1.05,
+  high: 1.45
 };
 
 type Shockwave = { x: number; y: number; life: number; maxLife: number; color: string };
@@ -139,11 +139,11 @@ export default function GameCanvas({
 
     state.damage += 1;
     state.marks.push({ x, y, seed });
-    state.marks = state.marks.slice(-70);
-    state.stretch = Math.min(260, state.stretch + 46);
+    state.marks = state.marks.slice(-54);
+    state.stretch = Math.min(230, state.stretch + 38);
 
     const complete = state.damage >= object.maxDamage;
-    state.shockwaves.push({ x, y, life: complete ? 24 : 14, maxLife: complete ? 24 : 14, color: object.color });
+    state.shockwaves.push({ x, y, life: complete ? 18 : 10, maxLife: complete ? 18 : 10, color: object.color });
     spawnParticles(state.particles, x, y, object.color, complete, object.type, particleMultiplier);
 
     if (!muted) {
@@ -154,14 +154,14 @@ export default function GameCanvas({
 
     if (complete) {
       state.toastAge = 1;
-      state.flashAge = 12;
-      state.shakeUntil = performance.now() + 220;
+      state.flashAge = 5;
+      state.shakeUntil = performance.now() + 150;
       spawnObjectBurst(state.particles, object.type, object.color, particleMultiplier);
       onDestroyed(object.type);
       state.damage = 0;
-      state.marks = object.type === "bubble" ? [] : state.marks.slice(-22);
+      state.marks = object.type === "bubble" ? [] : state.marks.slice(-18);
     } else {
-      state.shakeUntil = performance.now() + 95;
+      state.shakeUntil = performance.now() + 64;
     }
   };
 
@@ -240,7 +240,7 @@ function drawFlash(context: CanvasRenderingContext2D, state: GameState) {
   }
 
   context.save();
-  context.globalAlpha = state.flashAge / 34;
+  context.globalAlpha = state.flashAge / 42;
   context.fillStyle = "#ffffff";
   context.fillRect(0, 0, WIDTH, HEIGHT);
   context.restore();
@@ -256,31 +256,31 @@ function spawnParticles(
   type: ObjectType,
   multiplier: number
 ) {
-  const count = Math.round((burst ? 118 : 32) * multiplier);
+  const count = Math.round((burst ? 68 : 18) * multiplier);
   const square = ["keyboard", "paper", "wall", "box", "pencils"].includes(type);
   const colors = getParticleColors(type, color);
 
   for (let i = 0; i < count; i += 1) {
     const angle = Math.random() * Math.PI * 2;
-    const speed = (burst ? 6.4 : 2.8) + Math.random() * (burst ? 10.5 : 5.6);
-    const sizeBoost = type === "window" || type === "ice" ? 1.45 : type === "wall" || type === "box" ? 1.25 : 1;
+    const speed = (burst ? 4.2 : 2.1) + Math.random() * (burst ? 5.6 : 3.2);
+    const sizeBoost = type === "window" || type === "ice" ? 1.2 : type === "wall" || type === "box" ? 1.15 : 1;
 
     particles.push({
-      x: x + (burst ? (Math.random() - 0.5) * 18 : 0),
-      y: y + (burst ? (Math.random() - 0.5) * 18 : 0),
+      x: x + (burst ? (Math.random() - 0.5) * 10 : 0),
+      y: y + (burst ? (Math.random() - 0.5) * 10 : 0),
       vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - (burst ? 6.8 : 2.6),
-      size: (5 + Math.random() * (burst ? 18 : 10)) * sizeBoost,
+      vy: Math.sin(angle) * speed - (burst ? 3.9 : 1.8),
+      size: (4 + Math.random() * (burst ? 13 : 7)) * sizeBoost,
       angle: Math.random() * Math.PI,
-      spin: (Math.random() - 0.5) * (burst ? 0.62 : 0.42),
-      life: 68 + Math.random() * (burst ? 74 : 36),
+      spin: (Math.random() - 0.5) * (burst ? 0.48 : 0.32),
+      life: 54 + Math.random() * (burst ? 50 : 26),
       color: colors[Math.floor(Math.random() * colors.length)],
       square
     });
   }
 
-  if (particles.length > 1200) {
-    particles.splice(0, particles.length - 1200);
+  if (particles.length > 620) {
+    particles.splice(0, particles.length - 620);
   }
 }
 
@@ -288,16 +288,16 @@ function spawnObjectBurst(particles: Particle[], type: ObjectType, color: string
   const origins = type === "window" ? windowPaneOrigins() : objectBurstOrigins(type);
 
   origins.forEach((origin) => {
-    spawnParticles(particles, origin.x, origin.y, color, true, type, multiplier * (type === "window" ? 0.92 : 0.75));
+    spawnParticles(particles, origin.x, origin.y, color, true, type, multiplier * (type === "window" ? 0.11 : 0.18));
   });
 }
 
 function windowPaneOrigins() {
   const points = [];
-  for (let i = 0; i < 26; i += 1) {
+  for (let i = 0; i < 10; i += 1) {
     points.push({
-      x: 304 + Math.random() * 292,
-      y: 114 + Math.random() * 292
+      x: 322 + Math.random() * 256,
+      y: 132 + Math.random() * 256
     });
   }
   return points;
@@ -305,23 +305,23 @@ function windowPaneOrigins() {
 
 function objectBurstOrigins(type: ObjectType) {
   const bounds: Record<ObjectType, { w: number; h: number; count: number }> = {
-    window: { w: 292, h: 292, count: 26 },
-    cup: { w: 150, h: 230, count: 7 },
-    plank: { w: 350, h: 120, count: 8 },
-    paper: { w: 210, h: 270, count: 9 },
-    laptop: { w: 360, h: 230, count: 8 },
-    plate: { w: 230, h: 230, count: 8 },
-    keyboard: { w: 380, h: 160, count: 10 },
-    monitor: { w: 330, h: 250, count: 8 },
-    can: { w: 130, h: 220, count: 7 },
-    bubble: { w: 300, h: 220, count: 12 },
-    balloon: { w: 190, h: 250, count: 8 },
-    ice: { w: 240, h: 240, count: 10 },
-    wall: { w: 360, h: 260, count: 12 },
-    box: { w: 250, h: 220, count: 9 },
-    pencils: { w: 250, h: 260, count: 8 },
-    cookie: { w: 230, h: 230, count: 9 },
-    jelly: { w: 280, h: 180, count: 9 }
+    window: { w: 256, h: 256, count: 10 },
+    cup: { w: 120, h: 200, count: 5 },
+    plank: { w: 320, h: 104, count: 6 },
+    paper: { w: 185, h: 245, count: 6 },
+    laptop: { w: 315, h: 200, count: 6 },
+    plate: { w: 200, h: 200, count: 6 },
+    keyboard: { w: 340, h: 135, count: 7 },
+    monitor: { w: 285, h: 205, count: 6 },
+    can: { w: 105, h: 190, count: 5 },
+    bubble: { w: 260, h: 190, count: 8 },
+    balloon: { w: 150, h: 215, count: 5 },
+    ice: { w: 210, h: 210, count: 7 },
+    wall: { w: 320, h: 220, count: 8 },
+    box: { w: 210, h: 185, count: 6 },
+    pencils: { w: 210, h: 220, count: 6 },
+    cookie: { w: 200, h: 200, count: 6 },
+    jelly: { w: 235, h: 145, count: 6 }
   };
   const { w, h, count } = bounds[type];
 
@@ -359,10 +359,10 @@ function drawShockwaves(context: CanvasRenderingContext2D, shockwaves: Shockwave
   for (let index = shockwaves.length - 1; index >= 0; index -= 1) {
     const shockwave = shockwaves[index];
     const progress = 1 - shockwave.life / shockwave.maxLife;
-    const radius = 18 + progress * 86;
+    const radius = 14 + progress * 52;
 
     context.save();
-    context.globalAlpha = Math.max(0, shockwave.life / shockwave.maxLife) * 0.38;
+    context.globalAlpha = Math.max(0, shockwave.life / shockwave.maxLife) * 0.22;
     context.strokeStyle = shockwave.color;
     context.lineWidth = 4;
     context.beginPath();
