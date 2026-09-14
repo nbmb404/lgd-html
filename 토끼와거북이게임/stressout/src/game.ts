@@ -30,7 +30,7 @@ export const objects: Destructible[] = [
   { type: "box", label: "골판지 상자", emoji: "📦", category: "우지끈", material: "paper", action: "꾹꾹 눌러 구겨요", maxDamage: 5, color: "#d0ab7b" },
   { type: "pencils", label: "연필 다발", emoji: "✏️", category: "우지끈", material: "wood", action: "한꺼번에 뚝 꺾어요", maxDamage: 4, color: "#eccb71" },
   { type: "cookie", label: "쿠키", emoji: "🍪", category: "바스락", material: "ceramic", action: "바삭바삭 가루로 만들어요", maxDamage: 4, color: "#c99868" },
-  { type: "jelly", label: "젤리 덩어리", emoji: "🍮", category: "쫘아악", material: "soft", action: "꾹 누르고 드래그해서 늘리고 끊어요", maxDamage: 7, color: "#b4caa0" }
+  { type: "jelly", label: "젤리 덩어리", emoji: "🟢", category: "쫘아악", material: "soft", action: "꾹 누르고 드래그해서 늘리고 끊어요", maxDamage: 7, color: "#b4caa0" }
 ];
 
 export const particleCounts: Record<ParticleLevel, number> = {
