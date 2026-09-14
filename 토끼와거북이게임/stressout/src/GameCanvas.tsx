@@ -48,6 +48,7 @@ interface BreakEffect {
 }
 
 const audioContextRef: { current: AudioContext | null } = { current: null };
+const OBJECT_SCALE = 1.45;
 
 export default function GameCanvas({
   objectType,
@@ -226,8 +227,12 @@ function drawObject(
 ) {
   const centerX = width / 2;
   const centerY = height / 2 + 8;
+  const scale = OBJECT_SCALE;
 
   context.save();
+  context.translate(centerX, centerY);
+  context.scale(scale, scale);
+  context.translate(-centerX, -centerY);
   context.lineWidth = 4;
   context.lineJoin = "round";
 
@@ -295,14 +300,7 @@ function drawObject(
   }
 
   if (type === "can") {
-    const canHeight = Math.max(90, 220 - damage * 20);
-    context.fillStyle = "#d9483b";
-    roundRect(context, centerX - 70, centerY - canHeight / 2, 140, canHeight, 26);
-    context.fill();
-    context.fillStyle = "#f7c24a";
-    context.fillRect(centerX - 70, centerY - 25, 140, 50);
-    context.strokeStyle = "#7f2a2a";
-    context.stroke();
+    drawCan(context, centerX, centerY, damage);
   }
 
   if (type === "tree") {
@@ -415,6 +413,69 @@ function drawMetalDent(context: CanvasRenderingContext2D, mark: Mark) {
   context.stroke();
 }
 
+function drawCan(context: CanvasRenderingContext2D, centerX: number, centerY: number, damage: number) {
+  const crush = Math.min(68, damage * 16);
+  const topY = centerY - 116 + crush * 0.55;
+  const bottomY = centerY + 116 - crush * 0.35;
+  const bodyWidth = 142 + Math.sin(damage * 1.7) * 9;
+  const left = centerX - bodyWidth / 2;
+  const right = centerX + bodyWidth / 2;
+
+  const bodyGradient = context.createLinearGradient(left, topY, right, topY);
+  bodyGradient.addColorStop(0, "#ad2437");
+  bodyGradient.addColorStop(0.18, "#e8455a");
+  bodyGradient.addColorStop(0.52, "#ff6f82");
+  bodyGradient.addColorStop(0.82, "#d7354b");
+  bodyGradient.addColorStop(1, "#922032");
+
+  context.fillStyle = bodyGradient;
+  context.beginPath();
+  context.moveTo(left, topY);
+  context.bezierCurveTo(left - 10, centerY - 42, left + 18, centerY + 46, left + 8, bottomY);
+  context.quadraticCurveTo(centerX, bottomY + 22, right - 8, bottomY);
+  context.bezierCurveTo(right - 18, centerY + 46, right + 10, centerY - 42, right, topY);
+  context.quadraticCurveTo(centerX, topY + 19, left, topY);
+  context.fill();
+
+  context.fillStyle = "#fff3a3";
+  context.beginPath();
+  context.moveTo(left + 4, centerY - 30);
+  context.bezierCurveTo(centerX - 28, centerY - 14 - damage * 4, centerX + 24, centerY - 46 + damage * 4, right - 4, centerY - 28);
+  context.lineTo(right - 8, centerY + 28);
+  context.bezierCurveTo(centerX + 18, centerY + 46 - damage * 3, centerX - 24, centerY + 18 + damage * 3, left + 8, centerY + 28);
+  context.closePath();
+  context.fill();
+
+  context.fillStyle = "#f3f6fb";
+  context.strokeStyle = "#8b94a3";
+  context.lineWidth = 3;
+  context.beginPath();
+  context.ellipse(centerX, topY, bodyWidth / 2, 22, 0, 0, Math.PI * 2);
+  context.fill();
+  context.stroke();
+
+  context.strokeStyle = "#c3cad4";
+  context.lineWidth = 5;
+  context.beginPath();
+  context.ellipse(centerX + 10, topY - 2, 32, 8, -0.1, 0, Math.PI * 2);
+  context.stroke();
+
+  context.strokeStyle = "rgba(95, 37, 48, 0.42)";
+  context.lineWidth = 3;
+  for (let i = 0; i < damage + 2; i += 1) {
+    const y = topY + 34 + i * 24;
+    context.beginPath();
+    context.moveTo(left + 10, y);
+    context.bezierCurveTo(centerX - 34, y - 16, centerX + 24, y + 18, right - 12, y - 4);
+    context.stroke();
+  }
+
+  context.fillStyle = "#cbd2dd";
+  context.beginPath();
+  context.ellipse(centerX, bottomY, bodyWidth / 2 - 8, 17, 0, 0, Math.PI * 2);
+  context.fill();
+}
+
 function drawBurnMark(context: CanvasRenderingContext2D, mark: Mark) {
   const gradient = context.createRadialGradient(0, 0, 2, 0, 0, 34);
   gradient.addColorStop(0, "rgba(255, 122, 48, 0.5)");
@@ -493,7 +554,14 @@ function clipWindow(context: CanvasRenderingContext2D, width: number, height: nu
   const centerX = width / 2;
   const centerY = height / 2 + 8;
   context.save();
-  roundRect(context, centerX - 150, centerY - 115, 300, 220, 6);
+  roundRect(
+    context,
+    centerX - 150 * OBJECT_SCALE,
+    centerY - 115 * OBJECT_SCALE,
+    300 * OBJECT_SCALE,
+    220 * OBJECT_SCALE,
+    8
+  );
   context.clip();
 }
 
@@ -648,10 +716,12 @@ function spawnParticles(particles: Particle[], type: ObjectType, x: number, y: n
 function spawnWindowCollapse(particles: Particle[], width: number, height: number, count: number) {
   const centerX = width / 2;
   const centerY = height / 2 + 8;
+  const paneWidth = 260 * OBJECT_SCALE;
+  const paneHeight = 190 * OBJECT_SCALE;
 
   for (let i = 0; i < count; i += 1) {
-    const paneX = centerX - 130 + Math.random() * 260;
-    const paneY = centerY - 95 + Math.random() * 190;
+    const paneX = centerX - paneWidth / 2 + Math.random() * paneWidth;
+    const paneY = centerY - paneHeight / 2 + Math.random() * paneHeight;
     const maxLife = 70 + Math.random() * 42;
 
     particles.push({
@@ -682,13 +752,15 @@ function getParticleKind(type: ObjectType): Particle["kind"] {
 function isInsideObject(type: ObjectType, x: number, y: number, width: number, height: number) {
   const centerX = width / 2;
   const centerY = height / 2 + 8;
+  const localX = centerX + (x - centerX) / OBJECT_SCALE;
+  const localY = centerY + (y - centerY) / OBJECT_SCALE;
 
-  if (type === "window") return x > centerX - 150 && x < centerX + 150 && y > centerY - 115 && y < centerY + 105;
-  if (type === "keyboard") return x > centerX - 180 && x < centerX + 180 && y > centerY - 80 && y < centerY + 80;
-  if (type === "wood") return x > centerX - 170 && x < centerX + 170 && y > centerY - 65 && y < centerY + 65;
-  if (type === "paper") return x > centerX - 130 && x < centerX + 130 && y > centerY - 145 && y < centerY + 145;
-  if (type === "can") return x > centerX - 80 && x < centerX + 80 && y > centerY - 120 && y < centerY + 120;
-  return (x - centerX) ** 2 + (y - (centerY - 55)) ** 2 < 160 ** 2;
+  if (type === "window") return localX > centerX - 150 && localX < centerX + 150 && localY > centerY - 115 && localY < centerY + 105;
+  if (type === "keyboard") return localX > centerX - 180 && localX < centerX + 180 && localY > centerY - 80 && localY < centerY + 80;
+  if (type === "wood") return localX > centerX - 170 && localX < centerX + 170 && localY > centerY - 65 && localY < centerY + 65;
+  if (type === "paper") return localX > centerX - 130 && localX < centerX + 130 && localY > centerY - 145 && localY < centerY + 145;
+  if (type === "can") return localX > centerX - 82 && localX < centerX + 82 && localY > centerY - 128 && localY < centerY + 128;
+  return (localX - centerX) ** 2 + (localY - (centerY - 55)) ** 2 < 160 ** 2;
 }
 
 function drawFlames(context: CanvasRenderingContext2D, x: number, y: number, damage: number) {
