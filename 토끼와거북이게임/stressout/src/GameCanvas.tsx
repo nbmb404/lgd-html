@@ -50,6 +50,7 @@ interface BreakEffect {
 const audioContextRef: { current: AudioContext | null } = { current: null };
 const OBJECT_SCALE = 1.45;
 const WINDOW_SCALE = 1.75;
+const TREE_SCALE = 1.22;
 
 export default function GameCanvas({
   objectType,
@@ -238,66 +239,19 @@ function drawObject(
   context.lineJoin = "round";
 
   if (type === "window") {
-    context.strokeStyle = "#557b8d";
-    context.fillStyle = "rgba(178, 225, 255, 0.72)";
-    roundRect(context, centerX - 150, centerY - 115, 300, 220, 6);
-    context.fill();
-    context.stroke();
-    context.beginPath();
-    context.moveTo(centerX, centerY - 115);
-    context.lineTo(centerX, centerY + 105);
-    context.moveTo(centerX - 150, centerY);
-    context.lineTo(centerX + 150, centerY);
-    context.stroke();
+    drawWindow(context, centerX, centerY);
   }
 
   if (type === "keyboard") {
-    context.fillStyle = "#1f242b";
-    roundRect(context, centerX - 180, centerY - 70 + damage * 2, 360, 140 - damage * 5, 8);
-    context.fill();
-    for (let row = 0; row < 4; row += 1) {
-      for (let col = 0; col < 10; col += 1) {
-        const missing = Math.sin(row * 9 + col * 13 + damage) > 0.78 - damage * 0.05;
-        if (!missing) {
-          context.fillStyle = "#e8ecef";
-          roundRect(context, centerX - 154 + col * 31, centerY - 48 + row * 28, 22, 18, 4);
-          context.fill();
-        }
-      }
-    }
+    drawKeyboard(context, centerX, centerY, damage);
   }
 
   if (type === "wood") {
-    context.fillStyle = "#9b6437";
-    roundRect(context, centerX - 170, centerY - 55, 340, 110, 4);
-    context.fill();
-    context.strokeStyle = "#5a331e";
-    for (let i = 0; i < 7; i += 1) {
-      context.beginPath();
-      context.moveTo(centerX - 150 + i * 50, centerY - 45);
-      context.lineTo(centerX - 130 + i * 42, centerY + 45);
-      context.stroke();
-    }
+    drawWoodPlank(context, centerX, centerY, damage);
   }
 
   if (type === "paper") {
-    context.fillStyle = "#faf7ef";
-    context.strokeStyle = "#c9c0ad";
-    context.beginPath();
-    context.moveTo(centerX - 115, centerY - 135);
-    context.lineTo(centerX + 115, centerY - 118 + damage * 4);
-    context.lineTo(centerX + 95 - damage * 6, centerY + 135);
-    context.lineTo(centerX - 125 + damage * 4, centerY + 112);
-    context.closePath();
-    context.fill();
-    context.stroke();
-    context.strokeStyle = "rgba(80, 80, 80, 0.2)";
-    for (let i = 0; i < 6; i += 1) {
-      context.beginPath();
-      context.moveTo(centerX - 85, centerY - 82 + i * 32);
-      context.lineTo(centerX + 75, centerY - 72 + i * 30);
-      context.stroke();
-    }
+    drawPaperSheet(context, centerX, centerY, damage);
   }
 
   if (type === "can") {
@@ -305,21 +259,205 @@ function drawObject(
   }
 
   if (type === "tree") {
-    const charLevel = Math.min(1, damage / 6);
-    context.fillStyle = mixColor("#744322", "#2a211d", charLevel);
-    roundRect(context, centerX - 45, centerY - 35, 90, 185, 12);
-    context.fill();
-    context.fillStyle = damage > 2 ? mixColor("#365e36", "#463b32", charLevel * 0.8) : "#2f6b3f";
-    context.beginPath();
-    context.arc(centerX, centerY - 90, 118 - damage * 4, 0, Math.PI * 2);
-    context.fill();
-    drawBarkLines(context, centerX, centerY, damage);
-    drawTorch(context, centerX + 120, centerY + 84, damage);
-    drawFlames(context, centerX + 58, centerY - 42, damage);
-    drawSmoke(context, centerX - 18, centerY - 156, damage);
+    drawTree(context, centerX, centerY, damage);
   }
 
   context.restore();
+}
+
+function drawWindow(context: CanvasRenderingContext2D, centerX: number, centerY: number) {
+  const frameGradient = context.createLinearGradient(centerX - 170, centerY - 130, centerX + 170, centerY + 130);
+  frameGradient.addColorStop(0, "#406678");
+  frameGradient.addColorStop(0.5, "#6f94a5");
+  frameGradient.addColorStop(1, "#315264");
+
+  context.fillStyle = "#fdf8fb";
+  roundRect(context, centerX - 165, centerY - 130, 330, 260, 13);
+  context.fill();
+
+  context.fillStyle = frameGradient;
+  roundRect(context, centerX - 157, centerY - 122, 314, 244, 11);
+  context.fill();
+
+  const glassGradient = context.createLinearGradient(centerX - 142, centerY - 110, centerX + 142, centerY + 108);
+  glassGradient.addColorStop(0, "#d9f4ff");
+  glassGradient.addColorStop(0.48, "#bfe5fa");
+  glassGradient.addColorStop(1, "#a9d5ef");
+  context.fillStyle = glassGradient;
+  roundRect(context, centerX - 142, centerY - 108, 284, 216, 5);
+  context.fill();
+
+  context.strokeStyle = "#406678";
+  context.lineWidth = 7;
+  context.beginPath();
+  context.moveTo(centerX, centerY - 112);
+  context.lineTo(centerX, centerY + 112);
+  context.moveTo(centerX - 148, centerY);
+  context.lineTo(centerX + 148, centerY);
+  context.stroke();
+
+  context.strokeStyle = "rgba(255, 255, 255, 0.78)";
+  context.lineWidth = 5;
+  context.beginPath();
+  context.moveTo(centerX - 112, centerY - 82);
+  context.lineTo(centerX - 58, centerY - 106);
+  context.moveTo(centerX + 42, centerY + 78);
+  context.lineTo(centerX + 112, centerY + 22);
+  context.stroke();
+}
+
+function drawKeyboard(context: CanvasRenderingContext2D, centerX: number, centerY: number, damage: number) {
+  const crush = Math.min(22, damage * 3);
+  const top = centerY - 78 + crush;
+  const height = 164 - crush * 1.8;
+  const bodyGradient = context.createLinearGradient(centerX - 190, top, centerX + 190, top + height);
+  bodyGradient.addColorStop(0, "#fff6fb");
+  bodyGradient.addColorStop(0.42, "#f3bfd1");
+  bodyGradient.addColorStop(1, "#a86178");
+
+  context.fillStyle = bodyGradient;
+  context.strokeStyle = "#8f5367";
+  context.lineWidth = 4;
+  roundRect(context, centerX - 195, top, 390, height, 18);
+  context.fill();
+  context.stroke();
+
+  for (let row = 0; row < 4; row += 1) {
+    for (let col = 0; col < 10; col += 1) {
+      const index = row * 10 + col;
+      const missing = Math.sin(row * 9 + col * 13 + damage) > 0.78 - damage * 0.05;
+      if (missing || index > 35) {
+        continue;
+      }
+
+      const keyWidth = index === 35 ? 96 : 28;
+      const keyX = centerX - 174 + col * 35;
+      const keyY = top + 20 + row * 34;
+      context.fillStyle = index % 7 === 0 ? "#f29abe" : "#fffafe";
+      context.strokeStyle = "rgba(111, 74, 91, 0.32)";
+      context.lineWidth = 2;
+      roundRect(context, keyX, keyY, keyWidth, 24, 5);
+      context.fill();
+      context.stroke();
+    }
+  }
+}
+
+function drawWoodPlank(context: CanvasRenderingContext2D, centerX: number, centerY: number, damage: number) {
+  const plankGradient = context.createLinearGradient(centerX - 185, centerY - 70, centerX + 185, centerY + 70);
+  plankGradient.addColorStop(0, "#d19b62");
+  plankGradient.addColorStop(0.45, "#a86d3b");
+  plankGradient.addColorStop(1, "#70401f");
+
+  context.fillStyle = plankGradient;
+  context.strokeStyle = "#5a331e";
+  context.lineWidth = 5;
+  roundRect(context, centerX - 188, centerY - 70, 376, 140, 8);
+  context.fill();
+  context.stroke();
+
+  context.strokeStyle = "rgba(89, 49, 25, 0.42)";
+  context.lineWidth = 2;
+  for (let i = 0; i < 8; i += 1) {
+    const y = centerY - 52 + i * 15;
+    context.beginPath();
+    context.moveTo(centerX - 174, y);
+    context.bezierCurveTo(centerX - 85, y - 18, centerX + 30, y + 20, centerX + 174, y - 4);
+    context.stroke();
+  }
+
+  context.strokeStyle = "rgba(51, 28, 15, 0.75)";
+  context.lineWidth = 5;
+  context.beginPath();
+  context.moveTo(centerX - damage * 11, centerY - 65);
+  context.lineTo(centerX + 12, centerY - 22);
+  context.lineTo(centerX - 8, centerY + 12);
+  context.lineTo(centerX + damage * 12, centerY + 65);
+  context.stroke();
+
+  context.strokeStyle = "#6b3d22";
+  context.lineWidth = 3;
+  context.beginPath();
+  context.ellipse(centerX + 82, centerY + 10, 32, 14, -0.2, 0, Math.PI * 2);
+  context.stroke();
+}
+
+function drawPaperSheet(context: CanvasRenderingContext2D, centerX: number, centerY: number, damage: number) {
+  const fold = Math.min(34, damage * 8);
+  context.fillStyle = "#fffdf7";
+  context.strokeStyle = "#d4cab9";
+  context.lineWidth = 3;
+  context.beginPath();
+  context.moveTo(centerX - 125, centerY - 150);
+  context.lineTo(centerX + 95, centerY - 144 + fold * 0.3);
+  context.lineTo(centerX + 122, centerY + 118);
+  context.lineTo(centerX - 108 + fold * 0.25, centerY + 150);
+  context.closePath();
+  context.fill();
+  context.stroke();
+
+  context.fillStyle = "#f1e9da";
+  context.beginPath();
+  context.moveTo(centerX + 92, centerY - 143 + fold * 0.3);
+  context.lineTo(centerX + 123, centerY - 108 + fold * 0.25);
+  context.lineTo(centerX + 80, centerY - 111);
+  context.closePath();
+  context.fill();
+  context.stroke();
+
+  context.strokeStyle = "rgba(128, 115, 99, 0.22)";
+  context.lineWidth = 2;
+  for (let i = 0; i < 8; i += 1) {
+    context.beginPath();
+    context.moveTo(centerX - 88, centerY - 84 + i * 27);
+    context.lineTo(centerX + 74, centerY - 82 + i * 26);
+    context.stroke();
+  }
+
+  context.fillStyle = "#d94c7b";
+  context.font = "700 16px Pretendard, system-ui, sans-serif";
+  context.fillText("오늘의 스트레스", centerX - 86, centerY - 112);
+}
+
+function drawTree(context: CanvasRenderingContext2D, centerX: number, centerY: number, damage: number) {
+  const charLevel = Math.min(1, damage / 6);
+  const crownGradient = context.createRadialGradient(centerX - 45, centerY - 126, 12, centerX, centerY - 92, 150);
+  crownGradient.addColorStop(0, "#6fba68");
+  crownGradient.addColorStop(0.55, mixColor("#3f8a4c", "#554038", charLevel * 0.65));
+  crownGradient.addColorStop(1, mixColor("#285d35", "#322925", charLevel * 0.8));
+
+  context.fillStyle = crownGradient;
+  drawLeafBlob(context, centerX - 78, centerY - 102, 58, 50);
+  drawLeafBlob(context, centerX - 24, centerY - 142, 66, 58);
+  drawLeafBlob(context, centerX + 48, centerY - 108, 64, 52);
+  drawLeafBlob(context, centerX + 4, centerY - 76, 78, 54);
+  drawLeafBlob(context, centerX - 42, centerY - 68, 54, 40);
+
+  const trunkGradient = context.createLinearGradient(centerX - 54, centerY - 38, centerX + 58, centerY + 158);
+  trunkGradient.addColorStop(0, mixColor("#9a5c2f", "#3a2a22", charLevel));
+  trunkGradient.addColorStop(0.48, mixColor("#744322", "#251c18", charLevel));
+  trunkGradient.addColorStop(1, "#4a2b18");
+  context.fillStyle = trunkGradient;
+  context.strokeStyle = "#3a2216";
+  context.lineWidth = 4;
+
+  context.beginPath();
+  context.moveTo(centerX - 46, centerY + 154);
+  context.bezierCurveTo(centerX - 32, centerY + 86, centerX - 42, centerY + 28, centerX - 20, centerY - 28);
+  context.lineTo(centerX + 24, centerY - 28);
+  context.bezierCurveTo(centerX + 44, centerY + 38, centerX + 34, centerY + 88, centerX + 54, centerY + 154);
+  context.closePath();
+  context.fill();
+  context.stroke();
+
+  context.strokeStyle = "rgba(39, 25, 18, 0.55)";
+  context.lineWidth = 3;
+  drawBranch(context, centerX - 8, centerY + 4, centerX - 82, centerY - 62);
+  drawBranch(context, centerX + 12, centerY - 12, centerX + 76, centerY - 74);
+  drawBarkLines(context, centerX, centerY, damage);
+  drawTorch(context, centerX + 128, centerY + 90, damage);
+  drawFlames(context, centerX + 55, centerY - 55, damage);
+  drawSmoke(context, centerX - 18, centerY - 170, damage);
 }
 
 function drawImpactMarks(
@@ -751,6 +889,7 @@ function getParticleKind(type: ObjectType): Particle["kind"] {
 }
 
 function getRenderScale(type: ObjectType) {
+  if (type === "tree") return TREE_SCALE;
   return type === "window" ? WINDOW_SCALE : OBJECT_SCALE;
 }
 
@@ -782,6 +921,25 @@ function drawFlames(context: CanvasRenderingContext2D, x: number, y: number, dam
     context.quadraticCurveTo(x + offsetX + 24, y + 56, x + offsetX, y + 88);
     context.fill();
   }
+}
+
+function drawLeafBlob(context: CanvasRenderingContext2D, x: number, y: number, radiusX: number, radiusY: number) {
+  context.beginPath();
+  context.ellipse(x, y, radiusX, radiusY, -0.14, 0, Math.PI * 2);
+  context.fill();
+}
+
+function drawBranch(
+  context: CanvasRenderingContext2D,
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number
+) {
+  context.beginPath();
+  context.moveTo(startX, startY);
+  context.quadraticCurveTo((startX + endX) / 2, startY - 32, endX, endY);
+  context.stroke();
 }
 
 function drawTorch(context: CanvasRenderingContext2D, x: number, y: number, damage: number) {
