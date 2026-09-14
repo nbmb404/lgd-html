@@ -26,7 +26,11 @@ interface Particle {
   vy: number;
   size: number;
   life: number;
+  maxLife: number;
   color: string;
+  kind: "glass" | "keycap" | "wood" | "paper" | "metal" | "ember" | "ash";
+  rotation: number;
+  spin: number;
 }
 
 interface Toast {
@@ -51,6 +55,7 @@ export default function GameCanvas({
   const particlesRef = useRef<Particle[]>([]);
   const toastsRef = useRef<Toast[]>([]);
   const damageRef = useRef(0);
+  const shakeRef = useRef(0);
   const lastDragHitRef = useRef(0);
   const object = useMemo(() => getObject(objectType), [objectType]);
 
@@ -59,6 +64,7 @@ export default function GameCanvas({
     particlesRef.current = [];
     toastsRef.current = [];
     damageRef.current = 0;
+    shakeRef.current = 0;
   }, [objectType]);
 
   useEffect(() => {
@@ -90,21 +96,22 @@ export default function GameCanvas({
       context.clearRect(0, 0, width, height);
       drawBackdrop(context, width, height);
 
-      if (screenShake && damageRef.current > 0) {
-        const shake = Math.min(6, damageRef.current) * 0.45;
+      if (screenShake && shakeRef.current > 0.05) {
+        const shake = shakeRef.current;
         context.save();
-        context.translate(Math.sin(frame * 0.7) * shake, Math.cos(frame * 0.9) * shake);
+        context.translate(Math.sin(frame * 1.8) * shake, Math.cos(frame * 2.2) * shake);
       }
 
       drawObject(context, objectType, width, height, damageRef.current);
       drawMarks(context, marksRef.current, objectType);
 
-      if (screenShake && damageRef.current > 0) {
+      if (screenShake && shakeRef.current > 0.05) {
         context.restore();
       }
 
       updateParticles(context, particlesRef.current, height);
       updateToasts(context, toastsRef.current);
+      shakeRef.current *= 0.78;
 
       animationId = requestAnimationFrame(draw);
     };
@@ -140,17 +147,19 @@ export default function GameCanvas({
     lastDragHitRef.current = now;
 
     damageRef.current += 1;
+    shakeRef.current = Math.min(3.2, 1.2 + damageRef.current * 0.28);
     marksRef.current.push({ x, y, age: 0, seed: Math.random() * 1000 });
     if (marksRef.current.length > 38) {
       marksRef.current.splice(0, marksRef.current.length - 38);
     }
-    spawnParticles(particlesRef.current, objectType, x, y, particleCounts[particleLevel]);
+    spawnParticles(particlesRef.current, objectType, x, y, particleCounts[particleLevel], false);
     playSound(object.sound, muted, volume);
     onHit(objectType);
 
     if (damageRef.current >= object.maxDamage) {
       toastsRef.current.push({ x, y, age: 0 });
-      spawnParticles(particlesRef.current, objectType, x, y, particleCounts[particleLevel] * 2);
+      shakeRef.current = 4.4;
+      spawnParticles(particlesRef.current, objectType, x, y, particleCounts[particleLevel] * 3, true);
       playSound(object.sound, muted, Math.min(100, volume + 15));
       onDestroyed(objectType);
       damageRef.current = Math.max(1, damageRef.current % object.maxDamage);
@@ -275,14 +284,18 @@ function drawObject(
   }
 
   if (type === "tree") {
-    context.fillStyle = "#744322";
+    const charLevel = Math.min(1, damage / 6);
+    context.fillStyle = mixColor("#744322", "#2a211d", charLevel);
     roundRect(context, centerX - 45, centerY - 35, 90, 185, 12);
     context.fill();
-    context.fillStyle = damage > 2 ? "#365e36" : "#2f6b3f";
+    context.fillStyle = damage > 2 ? mixColor("#365e36", "#463b32", charLevel * 0.8) : "#2f6b3f";
     context.beginPath();
     context.arc(centerX, centerY - 90, 118 - damage * 4, 0, Math.PI * 2);
     context.fill();
-    drawFlames(context, centerX + 65, centerY - 25, damage);
+    drawBarkLines(context, centerX, centerY, damage);
+    drawTorch(context, centerX + 120, centerY + 84, damage);
+    drawFlames(context, centerX + 58, centerY - 42, damage);
+    drawSmoke(context, centerX - 18, centerY - 156, damage);
   }
 
   context.restore();
@@ -314,19 +327,95 @@ function updateParticles(context: CanvasRenderingContext2D, particles: Particle[
   for (let index = particles.length - 1; index >= 0; index -= 1) {
     const particle = particles[index];
     particle.life -= 1;
-    particle.vy += 0.18;
+    particle.rotation += particle.spin;
+    particle.vy += particle.kind === "ember" || particle.kind === "ash" ? -0.02 : 0.18;
     particle.x += particle.vx;
     particle.y += particle.vy;
 
-    context.globalAlpha = Math.max(0, particle.life / 58);
-    context.fillStyle = particle.color;
-    context.fillRect(particle.x, particle.y, particle.size, particle.size);
+    context.save();
+    context.translate(particle.x, particle.y);
+    context.rotate(particle.rotation);
+    context.globalAlpha = Math.max(0, particle.life / particle.maxLife);
+    drawParticle(context, particle);
+    context.restore();
     context.globalAlpha = 1;
 
     if (particle.life <= 0 || particle.y > height + 40) {
       particles.splice(index, 1);
     }
   }
+}
+
+function drawParticle(context: CanvasRenderingContext2D, particle: Particle) {
+  context.fillStyle = particle.color;
+  context.strokeStyle = "rgba(48, 51, 65, 0.16)";
+  context.lineWidth = 1;
+
+  if (particle.kind === "glass") {
+    context.beginPath();
+    context.moveTo(0, -particle.size * 0.9);
+    context.lineTo(particle.size * 0.75, particle.size * 0.65);
+    context.lineTo(-particle.size * 0.85, particle.size * 0.45);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    return;
+  }
+
+  if (particle.kind === "keycap") {
+    roundRect(context, -particle.size * 0.8, -particle.size * 0.55, particle.size * 1.6, particle.size * 1.1, 3);
+    context.fill();
+    context.stroke();
+    return;
+  }
+
+  if (particle.kind === "wood") {
+    context.beginPath();
+    context.moveTo(-particle.size * 1.6, -particle.size * 0.25);
+    context.lineTo(particle.size * 1.4, -particle.size * 0.1);
+    context.lineTo(particle.size * 0.8, particle.size * 0.3);
+    context.lineTo(-particle.size * 1.2, particle.size * 0.5);
+    context.closePath();
+    context.fill();
+    return;
+  }
+
+  if (particle.kind === "paper") {
+    context.beginPath();
+    context.moveTo(-particle.size, -particle.size * 0.7);
+    context.lineTo(particle.size * 0.9, -particle.size * 0.45);
+    context.lineTo(particle.size * 0.7, particle.size * 0.75);
+    context.lineTo(-particle.size * 0.75, particle.size * 0.5);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    return;
+  }
+
+  if (particle.kind === "metal") {
+    context.beginPath();
+    context.ellipse(0, 0, particle.size * 1.1, particle.size * 0.45, 0, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+    return;
+  }
+
+  if (particle.kind === "ember") {
+    const gradient = context.createRadialGradient(0, 0, 1, 0, 0, particle.size * 1.4);
+    gradient.addColorStop(0, "#fff1a8");
+    gradient.addColorStop(0.45, particle.color);
+    gradient.addColorStop(1, "rgba(241, 109, 153, 0)");
+    context.fillStyle = gradient;
+    context.beginPath();
+    context.arc(0, 0, particle.size * 1.4, 0, Math.PI * 2);
+    context.fill();
+    return;
+  }
+
+  context.fillStyle = "rgba(72, 61, 56, 0.55)";
+  context.beginPath();
+  context.arc(0, 0, particle.size * 0.6, 0, Math.PI * 2);
+  context.fill();
 }
 
 function updateToasts(context: CanvasRenderingContext2D, toasts: Toast[]) {
@@ -346,27 +435,49 @@ function updateToasts(context: CanvasRenderingContext2D, toasts: Toast[]) {
   }
 }
 
-function spawnParticles(particles: Particle[], type: ObjectType, x: number, y: number, count: number) {
+function spawnParticles(particles: Particle[], type: ObjectType, x: number, y: number, count: number, burst: boolean) {
   const palette: Record<ObjectType, string[]> = {
-    window: ["#d4f1ff", "#9fd8ff", "#ffffff"],
-    keyboard: ["#e8ecef", "#20242a", "#7d8792"],
-    wood: ["#9b6437", "#6a3f22", "#c4935d"],
-    paper: ["#faf7ef", "#ded5c5", "#ffffff"],
-    can: ["#d9483b", "#f7c24a", "#c9d0d8"],
-    tree: ["#f46d2f", "#ffbd45", "#2f6b3f"]
+    window: ["#dff7ff", "#a9e5ff", "#ffffff", "#8fcfff"],
+    keyboard: ["#f6f7fb", "#303341", "#8e98a8", "#ffb8cf"],
+    wood: ["#a96d3a", "#6d4124", "#d79a5f", "#4b2d1d"],
+    paper: ["#fffef8", "#f5eedf", "#ffffff", "#eadfcc"],
+    can: ["#e84d5b", "#f5c84c", "#c9d0d8", "#ffffff"],
+    tree: ["#ff7a30", "#ffc447", "#3c6f40", "#554038"]
   };
 
   for (let i = 0; i < count; i += 1) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = (burst ? 5.5 : 2.6) + Math.random() * (burst ? 8 : 4);
+    const kind = getParticleKind(type);
+    const maxLife = Math.random() * 36 + (burst ? 44 : 28);
+
     particles.push({
       x,
       y,
-      vx: (Math.random() - 0.5) * 9,
-      vy: -Math.random() * 7 - 1,
-      size: Math.random() * 9 + 3,
-      life: Math.random() * 36 + 32,
-      color: palette[type][Math.floor(Math.random() * palette[type].length)]
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - (burst ? 4 : 2),
+      size: Math.random() * (burst ? 9 : 6) + 4,
+      life: maxLife,
+      maxLife,
+      color: palette[type][Math.floor(Math.random() * palette[type].length)],
+      kind,
+      rotation: Math.random() * Math.PI,
+      spin: (Math.random() - 0.5) * 0.28
     });
   }
+
+  if (particles.length > 360) {
+    particles.splice(0, particles.length - 360);
+  }
+}
+
+function getParticleKind(type: ObjectType): Particle["kind"] {
+  if (type === "window") return "glass";
+  if (type === "keyboard") return "keycap";
+  if (type === "wood") return "wood";
+  if (type === "paper") return "paper";
+  if (type === "can") return "metal";
+  return Math.random() > 0.35 ? "ember" : "ash";
 }
 
 function isInsideObject(type: ObjectType, x: number, y: number, width: number, height: number) {
@@ -382,27 +493,103 @@ function isInsideObject(type: ObjectType, x: number, y: number, width: number, h
 }
 
 function drawFlames(context: CanvasRenderingContext2D, x: number, y: number, damage: number) {
-  if (damage <= 0) {
-    context.fillStyle = "#5f3920";
-    roundRect(context, x + 38, y + 92, 12, 92, 5);
-    context.fill();
-    context.fillStyle = "#ef5e2d";
+  const flameCount = Math.max(2, Math.min(10, damage + 3));
+
+  for (let i = 0; i < flameCount; i += 1) {
+    const offsetX = -42 + i * 14 + Math.sin(performance.now() / 130 + i) * 3;
+    const height = 44 + damage * 8 + Math.sin(performance.now() / 90 + i) * 6;
+    context.fillStyle = i % 2 === 0 ? "#ff6b32" : "#ffc447";
     context.beginPath();
-    context.moveTo(x + 44, y + 78);
-    context.quadraticCurveTo(x + 18, y + 118, x + 44, y + 130);
-    context.quadraticCurveTo(x + 68, y + 110, x + 44, y + 78);
+    context.moveTo(x + offsetX, y + 88);
+    context.quadraticCurveTo(x + offsetX - 24, y + 54, x + offsetX, y + 88 - height);
+    context.quadraticCurveTo(x + offsetX + 24, y + 56, x + offsetX, y + 88);
     context.fill();
+  }
+}
+
+function drawTorch(context: CanvasRenderingContext2D, x: number, y: number, damage: number) {
+  context.save();
+  context.translate(x, y);
+  context.rotate(-0.72);
+  context.fillStyle = "#5a351f";
+  roundRect(context, -9, -10, 18, 120, 7);
+  context.fill();
+  context.fillStyle = "#3b2b25";
+  roundRect(context, -16, -22, 32, 28, 6);
+  context.fill();
+  context.fillStyle = "#ff6b32";
+  context.beginPath();
+  context.moveTo(0, -70 - damage * 2);
+  context.quadraticCurveTo(-30, -24, 0, -4);
+  context.quadraticCurveTo(30, -28, 0, -70 - damage * 2);
+  context.fill();
+  context.fillStyle = "#ffd166";
+  context.beginPath();
+  context.moveTo(0, -50 - damage);
+  context.quadraticCurveTo(-14, -24, 0, -10);
+  context.quadraticCurveTo(16, -26, 0, -50 - damage);
+  context.fill();
+  context.restore();
+}
+
+function drawBarkLines(context: CanvasRenderingContext2D, centerX: number, centerY: number, damage: number) {
+  context.strokeStyle = "rgba(37, 27, 22, 0.5)";
+  context.lineWidth = 3;
+
+  for (let i = 0; i < 6; i += 1) {
+    context.beginPath();
+    context.moveTo(centerX - 28 + i * 11, centerY - 20);
+    context.bezierCurveTo(
+      centerX - 40 + i * 14,
+      centerY + 22,
+      centerX - 16 + i * 7,
+      centerY + 68,
+      centerX - 30 + i * 13,
+      centerY + 136
+    );
+    context.stroke();
+  }
+
+  if (damage > 2) {
+    context.fillStyle = "rgba(39, 31, 28, 0.45)";
+    for (let i = 0; i < damage; i += 1) {
+      context.beginPath();
+      context.ellipse(centerX - 32 + i * 13, centerY + 4 + i * 19, 14, 9, i, 0, Math.PI * 2);
+      context.fill();
+    }
+  }
+}
+
+function drawSmoke(context: CanvasRenderingContext2D, x: number, y: number, damage: number) {
+  if (damage < 2) {
     return;
   }
 
-  for (let i = 0; i < Math.min(7, damage + 2); i += 1) {
-    context.fillStyle = i % 2 === 0 ? "#ef5e2d" : "#ffbd45";
+  context.fillStyle = "rgba(91, 85, 84, 0.18)";
+  for (let i = 0; i < damage; i += 1) {
+    const drift = Math.sin(performance.now() / 500 + i) * 12;
     context.beginPath();
-    context.moveTo(x - i * 16, y + 60 + i * 12);
-    context.quadraticCurveTo(x - 26 + i * 8, y + 20 + i * 4, x + 6, y + 60 + i * 9);
-    context.quadraticCurveTo(x + 24, y + 94, x - i * 16, y + 60 + i * 12);
+    context.arc(x + drift + i * 10, y - i * 22, 18 + i * 3, 0, Math.PI * 2);
     context.fill();
   }
+}
+
+function mixColor(from: string, to: string, amount: number) {
+  const start = hexToRgb(from);
+  const end = hexToRgb(to);
+  const ratio = Math.max(0, Math.min(1, amount));
+
+  return `rgb(${Math.round(start.r + (end.r - start.r) * ratio)}, ${Math.round(
+    start.g + (end.g - start.g) * ratio
+  )}, ${Math.round(start.b + (end.b - start.b) * ratio)})`;
+}
+
+function hexToRgb(hex: string) {
+  return {
+    r: Number.parseInt(hex.slice(1, 3), 16),
+    g: Number.parseInt(hex.slice(3, 5), 16),
+    b: Number.parseInt(hex.slice(5, 7), 16)
+  };
 }
 
 function roundRect(context: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
