@@ -99,8 +99,7 @@ input:focus-visible {
   letter-spacing: 0;
 }
 
-.start-actions,
-.top-actions {
+.start-actions {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
@@ -109,7 +108,6 @@ input:focus-visible {
 .primary-button,
 .ghost-button,
 .refill-button,
-.top-actions button,
 .record-card button,
 .logo-button {
   min-height: 48px;
@@ -125,7 +123,6 @@ input:focus-visible {
 .primary-button:hover,
 .ghost-button:hover,
 .refill-button:hover,
-.top-actions button:hover,
 .record-card button:hover,
 .logo-button:hover {
   transform: translateY(-1px);
@@ -139,7 +136,6 @@ input:focus-visible {
 }
 
 .ghost-button,
-.top-actions button,
 .record-card button,
 .logo-button {
   background: var(--white);
@@ -166,64 +162,172 @@ input:focus-visible {
 
 /* 게임 화면 */
 .game-screen {
-  height: 100dvh;
-  min-height: 0;
-  max-height: 100dvh;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  overflow: hidden;
+  max-width: 1440px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 0 48px 34px;
 }
 
-.topbar {
-  min-height: 72px;
+.header {
+  height: 96px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 20px;
-  border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(18px);
-  z-index: 2;
-}
-
-.logo-button {
-  color: var(--pink-dark);
-  font-size: 20px;
-}
-
-.top-stats {
-  display: flex;
-  align-items: baseline;
   gap: 10px;
-}
-
-.top-stats strong {
+  border: 0;
+  background: transparent;
   color: var(--pink-dark);
+  font-size: 28px;
+  font-weight: 900;
 }
 
-.top-stats span {
+.brand-icon {
+  color: var(--pink);
+  font-size: 38px;
+}
+
+.brand small {
+  margin-left: 10px;
   color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.header-actions {
+  display: flex;
+  gap: 9px;
+}
+
+.header-actions button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text);
+  font-weight: 800;
+}
+
+.intro-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 32px;
+  padding: 34px 0 28px;
+}
+
+.intro-panel h1 {
+  margin: 12px 0;
+  font-size: clamp(32px, 3vw, 46px);
+  line-height: 1.32;
+  letter-spacing: 0;
+}
+
+.intro-panel h1 span {
+  color: var(--pink);
+}
+
+.intro-panel p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.balance-card {
+  width: 320px;
+  flex-shrink: 0;
+  padding: 24px;
+  border: 1px solid #edcad4;
+  border-radius: 22px;
+  background: linear-gradient(120deg, #fffafb, #fde2e9);
+  box-shadow: 0 18px 46px #be6b8120;
+  color: #74505e;
+}
+
+.balance-card span {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.balance-card strong {
+  display: block;
+  margin: 10px 0 12px;
+  color: var(--pink-dark);
+  font-size: 44px;
+  line-height: 1;
+}
+
+.balance-card p {
+  margin: 0;
+  padding-top: 14px;
+  border-top: 1px solid #edcdd7;
+  color: #9c6b7b;
+  font-size: 12px;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+}
+
+.game-column {
+  min-width: 0;
 }
 
 .playfield {
   position: relative;
+  height: auto;
   min-height: 0;
   overflow: hidden;
+  border: 1px solid #e9dfe1;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background-color: #faf8f4;
+  background-image: radial-gradient(#d9cbd0 1px, transparent 1px);
+  background-size: 22px 22px;
 }
 
 .game-canvas {
   display: block;
   width: 100%;
-  height: 100%;
-  min-height: 0;
+  height: auto;
+  aspect-ratio: 900 / 520;
+  cursor: crosshair;
   touch-action: none;
+}
+
+.stage-label,
+.stage-corner {
+  position: absolute;
+  top: 20px;
+  z-index: 2;
+  color: #776d72;
+  font-size: 11px;
+  pointer-events: none;
+}
+
+.stage-label {
+  left: 22px;
+}
+
+.stage-corner {
+  right: 22px;
+  color: #9d9295;
+  font-size: 9px;
+  letter-spacing: 1px;
 }
 
 .floating-hint {
   position: absolute;
   left: 50%;
-  top: 20px;
+  bottom: 18px;
+  top: auto;
   transform: translateX(-50%);
   max-width: calc(100vw - 32px);
   background: rgba(255, 255, 255, 0.88);
@@ -237,53 +341,123 @@ input:focus-visible {
   white-space: nowrap;
 }
 
-.object-bar {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 14px;
+.game-toolbar {
+  display: flex;
   align-items: center;
-  padding: 14px 20px 18px;
-  border-top: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.9);
-  z-index: 3;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: var(--white);
 }
 
-.object-tabs {
+.current-object {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.current-object > span {
   display: grid;
-  grid-template-columns: repeat(6, minmax(100px, 1fr));
-  gap: 8px;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #fbf2f3;
+  color: var(--pink-dark);
+  font-size: 28px;
 }
 
-.object-tabs button,
-.segmented button {
-  min-height: 62px;
-  border-radius: 18px;
-  background: var(--pink-light);
-  color: var(--text);
-  border: 1px solid #ffd2e2;
-  font-weight: 800;
-}
-
-.object-tabs button span,
-.object-tabs button small {
+.current-object strong,
+.current-object small {
   display: block;
 }
 
-.object-tabs button small {
-  margin-top: 3px;
+.current-object small {
+  margin-top: 5px;
   color: var(--muted);
   font-size: 12px;
 }
 
-.object-tabs button.selected,
-.segmented button.selected {
-  background: var(--text);
-  color: var(--white);
-  border-color: var(--text);
+.collection {
+  padding: 23px 19px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 18px 48px #bc688716;
 }
 
-.object-tabs button.selected small {
-  color: #ffc6da;
+.collection-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.collection-heading h2 {
+  margin: 8px 0 0;
+  font-size: 20px;
+}
+
+.collection-heading > span {
+  padding: 6px 9px;
+  border-radius: 9px;
+  background: #faedf1;
+  color: #9c6b7b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.object-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.object-card {
+  position: relative;
+  min-height: 104px;
+  padding: 10px 4px;
+  border: 1px solid #eee7e9;
+  border-radius: 15px;
+  background: var(--white);
+  color: #685a64;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+
+.object-card:hover {
+  transform: translateY(-1px);
+  background: #fff4f7;
+  border-color: #e0a4b8;
+}
+
+.object-card.selected {
+  background: #fff0f4;
+  border-color: var(--pink);
+}
+
+.object-emoji {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--pink-dark);
+  font-size: 30px;
+}
+
+.object-card strong,
+.object-card small {
+  display: block;
+  font-size: 12px;
+}
+
+.object-card small {
+  margin-top: 4px;
+  color: #9c8c96;
+  font-size: 10px;
 }
 
 .refill-button {
@@ -336,6 +510,17 @@ input:focus-visible {
 
 .segmented button {
   min-height: 42px;
+  border-radius: 14px;
+  background: var(--pink-light);
+  color: var(--text);
+  border: 1px solid #ffd2e2;
+  font-weight: 800;
+}
+
+.segmented button.selected {
+  background: var(--text);
+  color: var(--white);
+  border-color: var(--text);
 }
 
 /* 기록 화면 */
@@ -386,22 +571,45 @@ input:focus-visible {
 }
 
 @media (max-width: 860px) {
-  .topbar,
+  .game-screen {
+    padding: 0 18px 28px;
+  }
+
+  .header,
+  .intro-panel,
   .records-header,
   .record-card {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .object-bar {
+  .header {
+    height: auto;
+    gap: 14px;
+    padding: 18px 0;
+  }
+
+  .brand small {
+    display: none;
+  }
+
+  .intro-panel {
+    padding: 24px 0;
+  }
+
+  .balance-card {
+    width: 100%;
+  }
+
+  .workspace {
     grid-template-columns: 1fr;
   }
 
-  .object-tabs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .object-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .top-stats {
-    justify-content: space-between;
+  .stage-corner {
+    display: none;
   }
 }

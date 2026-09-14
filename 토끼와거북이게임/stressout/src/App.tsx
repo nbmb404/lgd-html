@@ -15,7 +15,7 @@ import {
   type Stats
 } from "./api";
 import GameCanvas from "./GameCanvas";
-import { objects } from "./game";
+import { getObject, objects } from "./game";
 
 const defaultPreferences: Preferences = {
   volume: 70,
@@ -44,6 +44,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState("계속 눌러도 멈추지 않아요");
   const savingRef = useRef(false);
+  const currentObject = getObject(selectedObject);
 
   useEffect(() => {
     initVisitor()
@@ -202,13 +203,13 @@ export default function App() {
 
       {screen === "game" && (
         <section className="game-screen">
-          <header className="topbar">
-            <button className="logo-button" onClick={leaveGame}>와장창</button>
-            <div className="top-stats">
-              <strong>엔돌핀 {stats.endorphins.toLocaleString()}</strong>
-              <span>{stats.destroyed.toLocaleString()}개 부숨</span>
-            </div>
-            <div className="top-actions">
+          <header className="header">
+            <button className="brand" onClick={leaveGame}>
+              <span className="brand-icon">✦</span>
+              와장창
+              <small>스트레스 비우는 파괴 공간</small>
+            </button>
+            <div className="header-actions">
               <button onClick={() => updatePreferences({ ...preferences, muted: !preferences.muted })}>
                 {preferences.muted ? "소리 켜기" : "음소거"}
               </button>
@@ -217,39 +218,80 @@ export default function App() {
             </div>
           </header>
 
-          <div className="playfield">
-            <GameCanvas
-              key={`${selectedObject}-${canvasKey}`}
-              objectType={selectedObject}
-              muted={preferences.muted}
-              volume={preferences.volume}
-              screenShake={preferences.screenShake}
-              particleLevel={preferences.particleLevel}
-              onHit={registerHit}
-              onDestroyed={registerDestroyed}
-            />
-            <div className="floating-hint">{statusMessage}</div>
-          </div>
-
-          <footer className="object-bar">
-            <div className="object-tabs">
-              {objects.map((object) => (
-                <button
-                  key={object.type}
-                  className={selectedObject === object.type ? "selected" : ""}
-                  onClick={() => {
-                    setSelectedObject(object.type);
-                    setCanvasKey((key) => key + 1);
-                    setStatusMessage(object.action);
-                  }}
-                >
-                  <span>{object.label}</span>
-                  <small>{object.action}</small>
-                </button>
-              ))}
+          <section className="intro-panel">
+            <div>
+              <p className="eyebrow">NO RULES. JUST BREAK.</p>
+              <h1>
+                오늘 쌓인 기분,
+                <span> 여기서 와장창.</span>
+              </h1>
+              <p>점수 경쟁 없이 원하는 만큼 누르고, 깨고, 태우고, 다시 정리하세요.</p>
             </div>
-            <button className="refill-button" onClick={refill}>파편 정리</button>
-          </footer>
+            <div className="balance-card">
+              <span>쌓인 엔돌핀</span>
+              <strong>{stats.endorphins.toLocaleString()}</strong>
+              <p>{stats.destroyed.toLocaleString()}개 부쉈어요</p>
+            </div>
+          </section>
+
+          <section className="workspace">
+            <div className="game-column">
+              <div className="playfield">
+                <span className="stage-label">● 나만의 파괴 공간</span>
+                <span className="stage-corner">CLICK · DRAG · RELAX</span>
+                <GameCanvas
+                  key={`${selectedObject}-${canvasKey}`}
+                  objectType={selectedObject}
+                  muted={preferences.muted}
+                  volume={preferences.volume}
+                  screenShake={preferences.screenShake}
+                  particleLevel={preferences.particleLevel}
+                  onHit={registerHit}
+                  onDestroyed={registerDestroyed}
+                />
+                <div className="floating-hint">{statusMessage}</div>
+              </div>
+
+              <div className="game-toolbar">
+                <div className="current-object">
+                  <span>{currentObject.emoji}</span>
+                  <div>
+                    <strong>{currentObject.label}</strong>
+                    <small>{currentObject.action}</small>
+                  </div>
+                </div>
+                <button className="refill-button" onClick={refill}>파편 정리</button>
+              </div>
+            </div>
+
+            <aside className="collection">
+              <div className="collection-heading">
+                <div>
+                  <p className="eyebrow">OBJECT DRAWER</p>
+                  <h2>부술 물건</h2>
+                </div>
+                <span>{objects.length}개</span>
+              </div>
+
+              <div className="object-grid">
+                {objects.map((object) => (
+                  <button
+                    key={object.type}
+                    className={selectedObject === object.type ? "object-card selected" : "object-card"}
+                    onClick={() => {
+                      setSelectedObject(object.type);
+                      setCanvasKey((key) => key + 1);
+                      setStatusMessage(object.action);
+                    }}
+                  >
+                    <span className="object-emoji">{object.emoji}</span>
+                    <strong>{object.label}</strong>
+                    <small>{object.category}</small>
+                  </button>
+                ))}
+              </div>
+            </aside>
+          </section>
 
           {settingsOpen && (
             <aside className="settings-panel">

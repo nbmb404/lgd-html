@@ -49,6 +49,7 @@ interface BreakEffect {
 
 const audioContextRef: { current: AudioContext | null } = { current: null };
 const OBJECT_SCALE = 1.45;
+const WINDOW_SCALE = 1.75;
 
 export default function GameCanvas({
   objectType,
@@ -227,7 +228,7 @@ function drawObject(
 ) {
   const centerX = width / 2;
   const centerY = height / 2 + 8;
-  const scale = OBJECT_SCALE;
+  const scale = getRenderScale(type);
 
   context.save();
   context.translate(centerX, centerY);
@@ -556,10 +557,10 @@ function clipWindow(context: CanvasRenderingContext2D, width: number, height: nu
   context.save();
   roundRect(
     context,
-    centerX - 150 * OBJECT_SCALE,
-    centerY - 115 * OBJECT_SCALE,
-    300 * OBJECT_SCALE,
-    220 * OBJECT_SCALE,
+    centerX - 150 * WINDOW_SCALE,
+    centerY - 115 * WINDOW_SCALE,
+    300 * WINDOW_SCALE,
+    220 * WINDOW_SCALE,
     8
   );
   context.clip();
@@ -716,8 +717,8 @@ function spawnParticles(particles: Particle[], type: ObjectType, x: number, y: n
 function spawnWindowCollapse(particles: Particle[], width: number, height: number, count: number) {
   const centerX = width / 2;
   const centerY = height / 2 + 8;
-  const paneWidth = 260 * OBJECT_SCALE;
-  const paneHeight = 190 * OBJECT_SCALE;
+  const paneWidth = 260 * WINDOW_SCALE;
+  const paneHeight = 190 * WINDOW_SCALE;
 
   for (let i = 0; i < count; i += 1) {
     const paneX = centerX - paneWidth / 2 + Math.random() * paneWidth;
@@ -749,11 +750,16 @@ function getParticleKind(type: ObjectType): Particle["kind"] {
   return Math.random() > 0.35 ? "ember" : "ash";
 }
 
+function getRenderScale(type: ObjectType) {
+  return type === "window" ? WINDOW_SCALE : OBJECT_SCALE;
+}
+
 function isInsideObject(type: ObjectType, x: number, y: number, width: number, height: number) {
   const centerX = width / 2;
   const centerY = height / 2 + 8;
-  const localX = centerX + (x - centerX) / OBJECT_SCALE;
-  const localY = centerY + (y - centerY) / OBJECT_SCALE;
+  const scale = getRenderScale(type);
+  const localX = centerX + (x - centerX) / scale;
+  const localY = centerY + (y - centerY) / scale;
 
   if (type === "window") return localX > centerX - 150 && localX < centerX + 150 && localY > centerY - 115 && localY < centerY + 105;
   if (type === "keyboard") return localX > centerX - 180 && localX < centerX + 180 && localY > centerY - 80 && localY < centerY + 80;
