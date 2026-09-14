@@ -125,9 +125,9 @@ app.delete("/api/sessions/:id", (request, response) => {
 });
 
 const dirname = path.dirname(fileURLToPath(import.meta.url));
-const distPath = path.resolve(dirname, "../dist");
+const distPath = path.resolve(dirname, "../../dist");
 app.use(express.static(distPath));
-app.get("*", (_request, response) => {
+app.get(/^\/(?!api).*/, (_request, response) => {
   response.sendFile(path.join(distPath, "index.html"));
 });
 
